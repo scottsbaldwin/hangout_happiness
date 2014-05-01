@@ -8,77 +8,150 @@
         <Content type="html"><![CDATA[
 
 <html>
-<style type="text/css">
-<!--
-.button {
-  border-radius: 3px;
-  -moz-border-radius: 3px;
-  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#ddd));
-  background: -moz-linear-gradient(top, #fff, #ddd);  
-  border: 1px solid #bbb;
+
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+<style>
+html, body {
+  height: 100%;
+  background-color: #333;
 }
-
-.button:active {
-        background: -webkit-gradient(linear, left top, left bottom, from(#aaa), to(#333)); 
-        background: -moz-linear-gradient(bottom, #ddd, #aaa); }
-
--->
+body {
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+  box-shadow: inset 0 0 100px rgba(0,0,0,.5);
+}
 </style>
-<body>
 
+<body>
 <script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
 
-<h3>Simple Hangout App</h3>
+<div class="container" style="width: 700;">
+  <div class="page-header">
+    <h2>Happiness <small>the object and design of our existence</small></h2>
+  </div>
 
-<p>
-<input class="button" type="button" value="Show participants!" id="showParticipants" 
-    style="visibility:hidden;"
-    onClick="showParticipants()"/>
-</p>
+  <div class="btn-group btn-group-lg">
+    <button type="button" value="0" class="btn btn-danger">miserable</button>
+    <button type="button" value="1" class="btn btn-warning">1</button>
+    <button type="button" value="2" class="btn btn-warning">2</button>
+    <button type="button" value="3" class="btn btn-warning">3</button>
+    <button type="button" value="4" class="btn btn-warning">4</button>
+    <button type="button" value="5" class="btn btn-warning">5</button>
+    <button type="button" value="6" class="btn btn-info">6</button>
+    <button type="button" value="7" class="btn btn-info">7</button>
+    <button type="button" value="8" class="btn btn-info">8</button>
+    <button type="button" value="9" class="btn btn-info">9</button>
+    <button type="button" value="10" class="btn btn-success">well-chuffed</button>
+  </div>
 
-<div id="participantsDiv"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-4 lead">
+        <h3>You</h3>
+      </div>
+      <div class="col-sm-2 lead text-center">
+        <h3 class="your-vote">?</h3>
+      </div>
+    </div>
 
-<hr>
+    <div class="row">
+      <div class="col-sm-4 lead">
+        <h3>Team <small><span class="nr-voting">0</span> vote(s) from <span class="nr-participants">0</span> participant(s)</small></h3>
+      </div>
+      <div class="col-sm-2 lead text-center">
+        <h3 class="team-average">?</h3>
+      </div>
+    </div>
+  </div>
 
-<p><a href="http://developers.google.com/+/hangouts/getting-started">Read the docs</a> to learn more about developing hangouts!</a></p>
+</div>
+
 
 <script>
-function showParticipants() {
-  var participants = gapi.hangout.getParticipants();
+function getUserHangoutId() {
+  return gapi.hangout.getParticipantId();
+}
 
-  var retVal = '<p>Participants: </p><ul>';
+function getParticipants() {
+  return gapi.hangout.getParticipants();
+}
 
-  for (var index in participants) {
-    var participant = participants[index];
+function getState() {
+  return gapi.hangout.data.getState();
+}
 
-    if (!participant.person) {
-      retVal += '<li>A participant not running this app</li>';
-    }
-    retVal += '<li>' + participant.person.displayName + '</li>';
+function setState(state) {
+  return gapi.hangout.data.submitDelta(state);
+}
+
+function vote(score) {
+  var state = getState();
+  if (state == null) {
+    state = {};
   }
+  state[getUserHangoutId()] = score;
+  setState(state);
+  $('.your-vote').html(score);
+}
 
-  retVal += '</ul>';
+function updateAverages() {
+  var state = getState();
+  var set = [];
+  for (p in state) {
+    set.push(state[p]-0);
+  }
+  var avg = average(set);
+  $('.team-average').html(avg);
+  updateParticipants();
+}
 
-  var div = document.getElementById('participantsDiv');
+function updateParticipants() {
+  var state = getState();
+  var participants = getParticipants();
+  var nrVoting = Object.keys(state).length;
+  $('.nr-voting').html(nrVoting);
+  $('.nr-participants').html(participants.length);
+}
 
-  div.innerHTML = retVal;
+function average(set) {
+  var sum = 0;
+  for(var i=0;i<set.length;i++) {
+    sum += set[i];
+  }
+  var avg = 0;
+  if (set.length > 0) {
+    avg = sum / set.length;
+  }
+  return avg.toFixed(1);
 }
 
 function init() {
   // When API is ready...
   gapi.hangout.onApiReady.add(
-      function(eventObj) {
-        if (eventObj.isApiReady) {
-          document.getElementById('showParticipants')
-            .style.visibility = 'visible';
-        }
-      });
+    function(eventObj) {
+      if (eventObj.isApiReady) {
+        $('.btn').click(function() {
+          vote($(this).val());
+        });
+
+        updateParticipants();
+      }
+  });
+
+  gapi.hangout.data.onStateChanged.add(function (event) {
+    updateAverages();
+  });
 }
 
 // Wait for gadget to load.
 gadgets.util.registerOnLoadHandler(init);
 </script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 </body>
+</html>
 ]]>
 </Content>
 </Module>
