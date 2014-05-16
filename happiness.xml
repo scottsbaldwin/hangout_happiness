@@ -26,6 +26,7 @@ body {
 
 <body>
 <script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
 <div class="container" style="width: 700;">
   <div class="page-header">
@@ -97,14 +98,20 @@ function vote(score) {
 }
 
 function updateAverages() {
+  var state = getVotesFromState();
+  var avg = average(set);
+  $('.team-average').html(avg);
+  updateParticipants();
+  showVoteBreakdown();
+}
+
+function getVotesFromState() {
   var state = getState();
   var set = [];
   for (p in state) {
     set.push(state[p]-0);
   }
-  var avg = average(set);
-  $('.team-average').html(avg);
-  updateParticipants();
+  return set;
 }
 
 function updateParticipants() {
@@ -126,6 +133,55 @@ function average(set) {
   }
   return avg.toFixed(1);
 }
+
+// ------------------------------------
+// Histogram chart setup
+// ------------------------------------
+
+google.load("visualization", "1", {packages:["corechart"]});
+google.setOnLoadCallback(showVoteBreakdown);
+
+function showVoteBreakdown() {
+  var scores = getVotesFromState();
+  if (scores.length < 2) {
+    $('#histogram').hide();
+    return;
+  } else {
+    $('#histogram').show();
+  }
+
+  var table = [['Voter', 'Score']];
+
+  for(var i=0;i<scores.length;i++) {
+    table.push(['Person ' + (i+1), scores[i]]);
+  }
+
+  var data = google.visualization.arrayToDataTable(table);
+
+  var options = {
+    histogram: { bucketSize: 1 },
+    legend: { position: 'none' },
+    backgroundColor: '#333',
+    width: '100%',
+    hAxis: {
+      textStyle: { color: '#fff' },
+      gridlines: { count: -1, color: '#666' },
+    },
+    vAxis: {
+      textStyle: { color: '#fff' },
+      gridlines: { count: -1, color: '#333' },
+      textPosition: 'none',
+    },
+    colors: ['#5bc0de', '#2a6496'],
+  };
+
+  var chart = new google.visualization.Histogram(document.getElementById('histogram'));
+  chart.draw(data, options);
+}
+
+// ------------------------------------
+// Initialize
+// ------------------------------------
 
 function init() {
   // When API is ready...
