@@ -98,7 +98,7 @@ function vote(score) {
 }
 
 function updateAverages() {
-  var state = getVotesFromState();
+  var set = getVotesFromState();
   var avg = average(set);
   $('.team-average').html(avg);
   updateParticipants();
