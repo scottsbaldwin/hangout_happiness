@@ -139,7 +139,6 @@ function average(set) {
 // ------------------------------------
 
 google.load("visualization", "1", {packages:["corechart"]});
-google.setOnLoadCallback(showVoteBreakdown);
 
 function showVoteBreakdown() {
   var scores = getVotesFromState();
@@ -198,6 +197,7 @@ function init() {
 
   gapi.hangout.data.onStateChanged.add(function (event) {
     updateAverages();
+    google.setOnLoadCallback(showVoteBreakdown);
   });
 }
 
